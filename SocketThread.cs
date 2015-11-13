@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,88 +6,78 @@ using System.Threading;
 
 using System.Net;
 using System.Net.Sockets;
-using System.Net.Json;
 
-namespace socketTest
+
+
+namespace JsonSocketServer
 {
-    class NameListThraed
+    class Program
     {
-        public Socket nameListSocket;
-        
-        public static String serverIp = "127.0.0.1"
-        
-        public static int serverPort = 1234
-        
-        public NameListThraed()
+        static void Main(string[] args)
         {
-            IPEndPoint objEndpoint = new IPEndPoint(IPAddress.Parse(serverIp), serverPort);
-            nameListSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            nameListSocket.Bind(objEndpoint);
-            nameListSocket.Listen(10);
+            ServerThread.startThread();
+        }
+    }
+
+    class ServerThread
+    {
+        public Socket serverSocket;
+
+        public static String serverIp = "127.0.0.1";
+
+        public static int serverPort = 1234;
+
+        public ServerThread()
+        {
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(serverIp), serverPort);
+            serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            serverSocket.Bind(endPoint);
+            serverSocket.Listen(10);
         }
 
         public static void ExeThread()
         {
-            SocketThread socketThread = new SocketThread();
-            while (true)
+            ServerThread serverThread = new ServerThread();
+            while(true)
             {
-                nameList.HandleConnection(nameList.nameListSocket.Accept());
+                serverThread.HandleConnection(serverThread.serverSocket.Accept());
             }
         }
+
 
         public static void startThread()
         {
             new Thread(new ThreadStart(ExeThread)).Start();
         }
 
-        public void HandleConnection(Socket iIncomingSocket)
+        public void HandleConnection(Socket incomingSocket)
         {
             Thread worker = new Thread(this.RecieveAndSend);
-            worker.Start(iIncomingSocket);
+            worker.Start(incomingSocket);
             worker.Join();
         }
 
-        public void RecieveAndSend(object iIncoming)
+        public void RecieveAndSend(object incoming)
         {
-            Socket objSocket = (Socket)iIncoming;
-            byte[] bytes = new byte[10240000];
+            Socket socket = (Socket)incoming;
+            byte[] bytes = new byte[1000];
 
-            int bytesRecieved = objSocket.Receive(bytes);
-            string strReceived = System.Text.Encoding.UTF8.GetString(bytes, 0, bytesRecieved);
+            int bytesRecieved = socket.Receive(bytes);
+            string strRecieved = Encoding.UTF8.GetString(bytes, 0, bytesRecieved);
 
+            string json = @"{
+                                'title' : 'Jelly',
+                                'content' : 'delusion'
+                            }
+                            ";
 
-            string strSend = null;
-            JsonArrayCollection nameList = new JsonArrayCollection();
-            int count = 1;
-            foreach (ePresentation.Database.DataSet.PeopleRow row in GlobalVar.m_tbPeople)
-            {
-                if (row == null)
-                    continue;
-                JsonObjectCollection name = new JsonObjectCollection();
+            json += "\n<End of json>";
+            socket.Send(Encoding.UTF8.GetBytes(json));
 
-
-                try
-                {
-                    name.Add(new JsonNumericValue("orderNumber", count));
-                    count++;
-                    name.Add(new JsonStringValue("name", row.ppComName));
-                    name.Add(new JsonStringValue("corporation", row.ppCorporation));
-                    name.Add(new JsonStringValue("position", row.ppPosition));
-
-                    nameList.Add(name);
-
-
-
-                } catch (Exception ex2)
-                {
-                    GlobalVar.m_log.write("request_ClientInfoList", ex2);
-                }
-            }
-            strSend = nameList.ToString() + "\n<NameListEnd>";
-            objSocket.Send(System.Text.Encoding.UTF8.GetBytes(strSend));
-
-            objSocket.Close();
+            socket.Close();
         }
 
+
     }
+
 }
