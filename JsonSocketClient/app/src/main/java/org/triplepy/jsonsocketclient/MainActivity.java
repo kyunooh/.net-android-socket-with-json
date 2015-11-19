@@ -1,21 +1,17 @@
 package org.triplepy.jsonsocketclient;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
 
-
-
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -27,7 +23,7 @@ import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener{
 
-    public static final String windowServerIp = "192.168.1.199";
+    public static final String windowServerIp = "192.168.1.105";
 
     public static final int windowServerPort = 1234;
 
@@ -39,9 +35,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
 
     private TextView m_ContentTextView;
 
-    private String title;
+    private static String title;
 
-    private String content;
+    private static String content;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,16 +55,14 @@ public class MainActivity extends AppCompatActivity implements OnClickListener{
 
 
     private void setJsonData(String received){
-        JSONParser parser = new JSONParser();
+
         try {
-            JSONObject jsonObject = (JSONObject) parser.parse(received);
+            JSONObject jsonObject = new JSONObject(received);
             this.title = jsonObject.getString("title");
             this.content = jsonObject.getString("content");
             Message msg = mainHandler.obtainMessage();
             msg.what = REFRESH;
             mainHandler.sendMessage(msg);
-        } catch (ParseException pe){
-            Log.e("MainActivity", pe.getMessage());
         } catch (JSONException jsone) {
             Log.e("MainActivity", jsone.getMessage());
         }
